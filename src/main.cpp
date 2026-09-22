@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <iostream>
 #include <numeric>
 #include <random>
 
@@ -16,6 +17,12 @@ int main()
     std::random_device rd;
     std::mt19937 gen(rd());
     std::shuffle(int_array.begin(), int_array.end(), gen);
+
+    for (int number : int_array)
+    {
+        std::cout << number << ' ';
+    }
+    std::cout << '\n';
 
     return 0;
 }
