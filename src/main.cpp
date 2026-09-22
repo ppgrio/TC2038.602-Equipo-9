@@ -6,10 +6,10 @@
 #include <numeric>
 #include <random>
 
-void print_array(std::array<int, ARRAY_SIZE> &arr)
+void print_array(std::array<unsigned int, ARRAY_SIZE> &arr)
 {
     std::cout << "arr: [";
-    for (int number : arr)
+    for (unsigned int number : arr)
     {
         std::cout << number << ' ';
     }
@@ -18,7 +18,7 @@ void print_array(std::array<int, ARRAY_SIZE> &arr)
 
 int main()
 {
-    std::array<int, ARRAY_SIZE> int_array;
+    std::array<unsigned int, ARRAY_SIZE> int_array;
 
     std::iota(int_array.begin(), int_array.end(), 1);
 
