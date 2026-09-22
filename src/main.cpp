@@ -1,5 +1,6 @@
 #include "../include/config.h"
 
+#include "../include/median_quickselect.h"
 #include "../include/median_sort.h"
 
 #include <algorithm>
@@ -31,6 +32,7 @@ int main()
     print_array(int_array);
 
     std::cout << "median_via_sort: " << median_via_sort(int_array) << '\n';
+    std::cout << "median_quickselect: " << median_quickselect(int_array) << '\n';
 
     return 0;
 }
