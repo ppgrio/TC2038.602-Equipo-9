@@ -1,6 +1,8 @@
 #include <array>
 #include <numeric>
 
+#define BREAK __asm__("int $3")
+
 int main()
 {
     std::array<int, 200> int_array;
