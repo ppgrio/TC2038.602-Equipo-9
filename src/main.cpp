@@ -1,5 +1,7 @@
 #include "../include/config.h"
 
+#include "../include/median_sort.h"
+
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -27,6 +29,8 @@ int main()
     std::shuffle(int_array.begin(), int_array.end(), gen);
 
     print_array(int_array);
+
+    std::cout << "median_via_sort: " << median_via_sort(int_array) << '\n';
 
     return 0;
 }
