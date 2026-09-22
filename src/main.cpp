@@ -6,8 +6,6 @@
 #include <numeric>
 #include <random>
 
-#define BREAK __asm__("int $3")
-
 void print_array(std::array<int, ARRAY_SIZE> &arr)
 {
     std::cout << "arr: [";
