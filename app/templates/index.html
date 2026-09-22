@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mediana de Precios — Lomuto</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Mediana de Precios de Productos</h1>
+        <p class="sub">
+            Encuentra el precio mediano con Quickselect usando partición de Lomuto — O(n) promedio.
+        </p>
+
+        <div class="panel">
+            <label>
+                Nombre del producto
+                <input type="text" id="nombre" placeholder="Ej. Laptop 14">
+            </label>
+            <label>
+                Precio
+                <input type="number" id="precio" placeholder="0.00" min="0" step="0.01">
+            </label>
+            <button id="btn-add">Agregar producto</button>
+            <span class="sep"></span>
+            <label>
+                Generar aleatorios
+                <input type="number" id="n-rand" value="20" min="1" max="5000">
+            </label>
+            <button id="btn-rand" class="secondary">Generar</button>
+            <button id="btn-clear" class="secondary">Limpiar</button>
+        </div>
+
+        <div class="panel calc">
+            <button id="btn-calc">Calcular mediana (Lomuto)</button>
+            <span id="status"></span>
+        </div>
+
+        <div id="resultado" class="resultado oculto">
+            <div class="mediana-box">
+                <span class="mediana-label">Precio mediano</span>
+                <span id="mediana-valor" class="mediana-valor">$0.00</span>
+                <span id="mediana-detalle" class="mediana-detalle"></span>
+            </div>
+        </div>
+
+        <h2 class="section-title">Productos (<span id="contador">0</span>)</h2>
+        <table id="tabla">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4" class="empty">Sin productos. Agrega o genera algunos.</td></tr>
+            </tbody>
+        </table>
+
+        <div id="orden-wrap" class="oculto">
+            <h2 class="section-title">Lista ordenada por precio (mediana resaltada)</h2>
+            <table id="tabla-orden">
+                <thead>
+                    <tr>
+                        <th>Posición</th>
+                        <th>Producto</th>
+                        <th>Precio</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = "productos_lomuto";
+
+        const $ = (id) => document.getElementById(id);
+        const tbody = document.querySelector("#tabla tbody");
+        const tbodyOrden = document.querySelector("#tabla-orden tbody");
+        let productos = [];
+
+        function cargar() {
+            try {
+                productos = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            } catch (e) {
+                productos = [];
+            }
+        }
+
+        function guardar() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(productos));
+        }
+
+        const fmt = (v) =>
+            "$" + Number(v).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        function render() {
+            $("contador").textContent = productos.length;
+            tbody.innerHTML = "";
+            if (productos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty">Sin productos. Agrega o genera algunos.</td></tr>';
+                return;
+            }
+            productos.forEach((p, i) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${p.nombre}</td>
+                    <td>${fmt(p.precio)}</td>
+                    <td><button class="del" data-i="${i}">Eliminar</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            tbody.querySelectorAll(".del").forEach((b) =>
+                b.addEventListener("click", () => {
+                    productos.splice(parseInt(b.dataset.i), 1);
+                    guardar();
+                    render();
+                    ocultarResultado();
+                })
+            );
+        }
+
+        function ocultarResultado() {
+            $("resultado").classList.add("oculto");
+            $("orden-wrap").classList.add("oculto");
+        }
+
+        function agregar(nombre, precio) {
+            nombre = (nombre || "").trim();
+            precio = parseFloat(precio);
+            if (!nombre || isNaN(precio)) {
+                $("status").textContent = "Nombre y precio válidos son obligatorios.";
+                return false;
+            }
+            productos.push({ nombre, precio });
+            guardar();
+            render();
+            ocultarResultado();
+            return true;
+        }
+
+        $("btn-add").addEventListener("click", () => {
+            if (agregar($("nombre").value, $("precio").value)) {
+                $("nombre").value = "";
+                $("precio").value = "";
+                $("nombre").focus();
+                $("status").textContent = "";
+            }
+        });
+
+        $("btn-rand").addEventListener("click", async () => {
+            const n = parseInt($("n-rand").value) || 20;
+            $("status").textContent = "Generando…";
+            const res = await fetch("/api/generar", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ n }),
+            });
+            const data = await res.json();
+            productos = productos.concat(data.productos);
+            guardar();
+            render();
+            ocultarResultado();
+            $("status").textContent = `Se generaron ${data.productos.length} productos.`;
+        });
+
+        $("btn-clear").addEventListener("click", () => {
+            productos = [];
+            guardar();
+            render();
+            ocultarResultado();
+            $("status").textContent = "";
+        });
+
+        $("btn-calc").addEventListener("click", async () => {
+            if (productos.length === 0) {
+                $("status").textContent = "Agrega productos primero.";
+                return;
+            }
+            $("status").textContent = "Calculando…";
+            const res = await fetch("/api/mediana", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ productos }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                $("status").textContent = data.error || "Error.";
+                return;
+            }
+            renderResultado(data);
+            $("status").textContent = `Listo — ${data.total} productos en ${data.tiempo_ms.toFixed(3)} ms`;
+        });
+
+        function renderResultado(data) {
+            $("mediana-valor").textContent = fmt(data.mediana);
+
+            const nombres = data.en_mediana.map((p) => p.nombre).join(" y ");
+            if (data.total % 2) {
+                $("mediana-detalle").textContent = `Producto en la posición media: ${nombres}`;
+            } else {
+                $("mediana-detalle").textContent =
+                    `Promedio de los dos productos centrales: ${nombres}`;
+            }
+            $("resultado").classList.remove("oculto");
+
+            const idx = new Set(data.indices_mediana);
+            tbodyOrden.innerHTML = "";
+            data.ordenados.forEach((p, i) => {
+                const tr = document.createElement("tr");
+                if (idx.has(i)) tr.className = "mediana-row";
+                tr.innerHTML = `
+                    <td>${i + 1}</td>
+                    <td>${p.nombre}</td>
+                    <td>${fmt(p.precio)}</td>
+                `;
+                tbodyOrden.appendChild(tr);
+            });
+            $("orden-wrap").classList.remove("oculto");
+        }
+
+        cargar();
+        render();
+    </script>
+</body>
+</html>
