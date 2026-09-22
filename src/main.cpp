@@ -8,6 +8,16 @@
 
 #define ARRAY_SIZE 200
 
+void print_array(std::array<int, ARRAY_SIZE> &arr)
+{
+    std::cout << "arr: [";
+    for (int number : arr)
+    {
+        std::cout << number << ' ';
+    }
+    std::cout << "\b \b]\n";
+}
+
 int main()
 {
     std::array<int, ARRAY_SIZE> int_array;
@@ -18,11 +28,7 @@ int main()
     std::mt19937 gen(rd());
     std::shuffle(int_array.begin(), int_array.end(), gen);
 
-    for (int number : int_array)
-    {
-        std::cout << number << ' ';
-    }
-    std::cout << '\n';
+    print_array(int_array);
 
     return 0;
 }
